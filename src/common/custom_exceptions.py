@@ -45,8 +45,3 @@ class JobExecutionException(CitadelIDPBackendException):
     Exception to be raised when a folder is expected to be present but doesn't exist.
     """
 
-
-class NoInputBlobsForProcessingException(CitadelIDPBackendException):
-    """
-    Exception to be raised when no documents are found in db for exception.
-    """
