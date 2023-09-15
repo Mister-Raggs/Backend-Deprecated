@@ -7,7 +7,6 @@ from azure.storage.blob import BlobServiceClient, generate_blob_sas, BlobSasPerm
 from common import constants, utils
 from common.custom_exceptions import (
     MissingConfigException,
-    NoInputBlobsForProcessingException,
     CitadelIDPBackendException,
 )
 
@@ -97,10 +96,7 @@ def handle_input_blob_process() -> list[InputBlob]:
 
 def get_list_of_input_blobs_from_mongodb(blob_service_client: BlobServiceClient) -> list[InputBlob]:
     """
-    gets list 'input_input_blob_blobs' from mongodb where is_validation_successful=true and is_processing_for_data = false.
-
-    Raises:
-        NoInputBlobsForProcessingException: Raised when no input_blobs are found in mongodb for processing.
+    gets list from mongodb where is_validation_successful=true and is_processing_for_data = false.
 
     Returns:
         list[InputBlob]: input_blob_list
@@ -112,14 +108,10 @@ def get_list_of_input_blobs_from_mongodb(blob_service_client: BlobServiceClient)
 
     # Collecting all the input_blobs from mongodb that are to be processed.
     input_blobs_list: list[InputBlob] = InputBlob.objects(is_validation_successful=True, is_processing_for_data=False)
-    if len(input_blobs_list) == 0:
-        raise NoInputBlobsForProcessingException(f"Zero input_blobs found in mongodb for processing")
-
     logging.info("%s input_blobs found in mongodb", len(input_blobs_list))
 
     for input_blob in input_blobs_list:
         updated_input_blobs_list.append(update_input_blob(input_blob, blob_service_client))
-
     return updated_input_blobs_list
 
 
