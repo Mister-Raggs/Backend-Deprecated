@@ -1,15 +1,11 @@
 import logging
 import os
-import base64
 import mongoengine as me
-from datetime import datetime, timedelta
-from azure.storage.blob import BlobServiceClient, generate_blob_sas, BlobSasPermissions
+from azure.storage.blob import BlobServiceClient
 from common import config_reader, constants
-from common.data_objects import Metadata
 from common.custom_exceptions import (
     MissingDocumentTypeException,
     MissingConfigException,
-    ContainerMissingException,
 )
 
 
@@ -128,107 +124,9 @@ def configure_database():
 
 def get_azure_storage_blob_service_client():
     """
-    blob_service_client calls BobServiceClient
+    get_azure_storage_blob_service_client creates BlobServicesClient from blob storage connection string
 
     Returns:
         BobServiceClient
     """
     return BlobServiceClient.from_connection_string(get_blob_storage_connection_string())
-
-
-def get_azure_container_client(container_name: str):
-    """
-    container_client calls ContainerClient
-
-    Args:
-        container_name (str): name of container for which you need container client_
-
-    Raises:
-        ContainerMissingException: raised when container dosen't exists
-
-    Returns:
-        ContainerClient: container client
-    """
-    container_client = get_azure_storage_blob_service_client().get_container_client(container_name)
-    if not container_client.exists():
-        raise ContainerMissingException(f"Container '{container_name}' does not exist.")
-    else:
-        return container_client
-
-
-def move_blob(source_blob_path: str, source_folder: str, destination_folder: str):
-    """
-    Moves blob from source folder to destination folder.
-
-    Args:
-        source_blob_path (str): path of blob in source folder
-        source_folder (str): source folder name
-        destination_folder (str): destination folder name.
-    """
-
-    destination_blob_path = source_blob_path.replace(source_folder, destination_folder)
-
-    source_blob_client = get_azure_container_client(constants.DEFAULT_BLOB_CONTAINER).get_blob_client(
-        blob=source_blob_path
-    )
-    destination_blob_client = get_azure_container_client(constants.DEFAULT_BLOB_CONTAINER).get_blob_client(
-        blob=destination_blob_path
-    )
-
-    destination_blob_client.start_copy_from_url(source_blob_client.url)
-    source_blob_client.delete_blob()
-
-
-def get_sas_url(blob_path: str, blob_service_client: BlobServiceClient):
-    """
-    get_sas_url takes a blob_path and generates sas_url for that blob.
-
-    Args:
-        blob_path (str): path of blob.
-
-    Returns:
-        returs sas_url of the blob.
-    """
-    account_name = blob_service_client.get_container_client(constants.DEFAULT_BLOB_CONTAINER).account_name
-    sas_token = generate_blob_sas(
-        account_name,
-        constants.DEFAULT_BLOB_CONTAINER,
-        blob_path,
-        account_key=blob_service_client.credential.account_key,
-        permission=BlobSasPermissions(read=True),
-        expiry=datetime.utcnow() + timedelta(hours=1),
-    )
-
-    # Constructing the full SAS URL for the blob
-    sas_url = f"https://{account_name}.blob.core.windows.net/{constants.DEFAULT_BLOB_CONTAINER}/{blob_path}?{sas_token}"
-
-    return sas_url
-
-
-def get_metadata(status: str, path: str) -> Metadata:
-    """
-    get_meta takes file status and its path and collects metadata properties of that blob.
-
-    Args:
-        status (str): Blob status
-        path (str): Path of blob
-    Returns:
-      str:  returns object of class Metadata
-    """
-    blob_client = get_azure_container_client(constants.DEFAULT_BLOB_CONTAINER).get_blob_client(path)
-    properties = blob_client.get_blob_properties()
-
-    metadata = Metadata()
-
-    metadata.status = f"[{datetime.now().strftime('%Y-%m-%d %H:%M:%S')}-{status}]"
-    metadata.name = properties.name
-    metadata.content_md5 = base64.b64encode(properties.content_settings.content_md5).decode("utf-8")
-    metadata.url = blob_client.url
-    metadata.blob_type = properties.blob_type
-    metadata.container = get_azure_container_client(constants.DEFAULT_BLOB_CONTAINER).container_name
-    metadata.content_length = properties.size
-    metadata.created = properties.creation_time.strftime("%Y-%m-%d %H:%M:%S")
-    metadata.last_modified = properties.last_modified.strftime("%Y-%m-%d %H:%M:%S")
-    metadata.content_type = properties.content_settings.content_type
-
-    return metadata
