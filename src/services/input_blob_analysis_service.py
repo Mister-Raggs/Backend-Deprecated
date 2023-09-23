@@ -33,38 +33,47 @@ def analyze_blob(input_blob: InputBlob, blob_service_client: BlobServiceClient):
         Exception: Any unhandled exceptions during the process.
     """
 
-    if not config_reader.config_data.has_option("Main", "form-recognizer-key"):
-        raise MissingConfigException("Main.form-recognizer-key is missing in config.")
-
-    form_recognizer_key = config_reader.config_data.get("Main", "form-recognizer-key")
-    if not utils.string_is_not_empty(form_recognizer_key):
-        raise MissingConfigException("Main.form-recognizer-key is present but has empty value.")
-
-    if not config_reader.config_data.has_option("Main", "form-recognizer-endpoint"):
-        raise MissingConfigException("Main.form_recognizer_endpoint is missing in config.")
-
-    form_recognizer_endpoint = config_reader.config_data.get("Main", "form-recognizer-endpoint")
-    if not utils.string_is_not_empty(form_recognizer_endpoint):
-        raise MissingConfigException("Main.form_recognizer_endpoint is present but has empty value.")
-
-    document_analysis_client = DocumentAnalysisClient(
-        form_recognizer_endpoint, credential=AzureKeyCredential(form_recognizer_key)
-    )
-
-    poller = None
-
-    if utils.string_is_not_empty(input_blob.in_progress_blob_sas_url):
-        poller = document_analysis_client.begin_analyze_document_from_url(
-            input_blob.form_recognizer_model_id, input_blob.in_progress_blob_sas_url
-        )
+    if config_reader.config_data.has_option("Main", "use-azure-form-recognizer"):
+        use_azure_form_recognizer = config_reader.config_data.getboolean("Main", "use-azure-form-recognizer")
     else:
-        raise CitadelIDPBackendException("input_blob.in_progress_blob_sas_url should be non empty.")
+        use_azure_form_recognizer = False
 
-    # Waiting for the analysis to complete and getting the result
-    result = poller.result()
+    if use_azure_form_recognizer:
+        if not config_reader.config_data.has_option("Main", "form-recognizer-key"):
+            raise MissingConfigException("Main.form-recognizer-key is missing in config.")
 
-    # Converting the result to a dictionary
-    result_dict = [result.to_dict()]
+        form_recognizer_key = config_reader.config_data.get("Main", "form-recognizer-key")
+        if not utils.string_is_not_empty(form_recognizer_key):
+            raise MissingConfigException("Main.form-recognizer-key is present but has empty value.")
+
+        if not config_reader.config_data.has_option("Main", "form-recognizer-endpoint"):
+            raise MissingConfigException("Main.form_recognizer_endpoint is missing in config.")
+
+        form_recognizer_endpoint = config_reader.config_data.get("Main", "form-recognizer-endpoint")
+        if not utils.string_is_not_empty(form_recognizer_endpoint):
+            raise MissingConfigException("Main.form_recognizer_endpoint is present but has empty value.")
+
+        document_analysis_client = DocumentAnalysisClient(
+            form_recognizer_endpoint, credential=AzureKeyCredential(form_recognizer_key)
+        )
+
+        poller = None
+
+        if utils.string_is_not_empty(input_blob.in_progress_blob_sas_url):
+            poller = document_analysis_client.begin_analyze_document_from_url(
+                input_blob.form_recognizer_model_id, input_blob.in_progress_blob_sas_url
+            )
+        else:
+            raise CitadelIDPBackendException("input_blob.in_progress_blob_sas_url should be non empty.")
+
+        # Waiting for the analysis to complete and getting the result
+        result = poller.result()
+
+        # Converting the result to a dictionary
+        result_dict = [result.to_dict()]
+
+    else:
+        result_dict = "No result is generated because Form Recognizer is Disabled"
 
     # Creating a dictionary with the blob name and blob output data
     final_result = {
@@ -91,7 +100,7 @@ def analyze_blob(input_blob: InputBlob, blob_service_client: BlobServiceClient):
         blob_client.upload_blob(
             result_json, overwrite=False, content_settings=ContentSettings(content_type="application/json")
         )
-
+        logging.info("Uploaded result_json file to Azure-Blob-Storage")
         input_blob.json_output = ResultJsonMetaData(
             json_result_container_name=constants.DEFAULT_RESULT_JSON_CONTAINER,
             json_result_blob_path=result_json_path_in_azure_blob_storage,
