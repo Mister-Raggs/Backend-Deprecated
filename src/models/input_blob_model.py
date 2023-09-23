@@ -1,7 +1,8 @@
-from common import constants
-from models.base_model import BaseModel
 import mongoengine as me
 from enum import Enum
+
+from common import constants
+from models.base_model import BaseModel
 from models.company_model import CompanyModel
 from models.user_model import UserModel
 
@@ -15,6 +16,7 @@ class LifecycleStatusTypes(str, Enum):
     UPLOADED = "UPLOADED"
     INITIAL_VALIDATING = "INITIAL_VALIDATING"
     INITIAL_VALIDATED = "INITIAL_VALIDATED"
+    UNDERLYING = "UNDERLYING"
     PROCESSING = "PROCESSING"
     PROCESSED = "PROCESSED"
     SUCCESS = "SUCCESS"
@@ -97,8 +99,7 @@ class MetaData(me.EmbeddedDocument):
 class InputBlob(BaseModel):
     """
     InputBlob represents the input blob that needs to be analyzed.
-    stores the information of movement of file from incomming to validation succesfull
-
+    stores the information of movement of file from incoming to validation successful
     """
 
     blob_name = me.StringField(required=True)
@@ -108,17 +109,20 @@ class InputBlob(BaseModel):
     incoming_blob_path = me.StringField(required=True)
     incoming_blob_url = me.URLField(required=True)
 
+    preview_blob_path = me.StringField()
+
     validation_failed_blob_path = me.StringField()
     validation_failed_blob_url = me.URLField()
 
     validation_successful_blob_path = me.StringField()
     validation_successful_blob_url = me.URLField()
 
-    form_recognizer_model_id = me.StringField()
-
     in_progress_blob_path = me.StringField()
     in_progress_blob_sas_url = me.URLField()
     in_progress_blob_url = me.URLField()
+
+    underlying_blob_path = me.StringField()
+    underlying_blob_url = me.URLField()
 
     success_blob_path = me.StringField()
     success_blob_url = me.URLField()
@@ -134,6 +138,9 @@ class InputBlob(BaseModel):
 
     # is_validation_successful mean if validation was successful or not
     is_validation_successful = me.BooleanField(required=True, default=False)
+
+    # is_unprocessed mean if file is still unprocessed more than 6 hrs.
+    is_underlying = me.BooleanField(required=True, default=False)
 
     # is_processing_for_data mean backend has moved it to in progress but not processed yet.
     is_processing_for_data = me.BooleanField(required=True, default=False)
@@ -156,8 +163,8 @@ class InputBlob(BaseModel):
     metadata = me.EmbeddedDocumentField(MetaData, required=True)
     lifecycle_status_list = me.ListField(me.EmbeddedDocumentField(LifecycleStatus), required=True)
 
-    #
     json_output = me.EmbeddedDocumentField(ResultJsonMetaData, required=False)
+    form_recognizer_model_id = me.StringField()
 
     meta = {
         "collection": "input_document_blobs",
@@ -199,6 +206,8 @@ class InputBlob(BaseModel):
             + f", validation_successful_blob_url='{self.validation_successful_blob_url}'"
             + f", in_progress_blob_path='{self.in_progress_blob_path}'"
             + f", in_progress_blob_url='{self.in_progress_blob_url}'"
+            + f", underlying_blob_path='{self.underlying_blob_path}'"
+            + f", underlying_blob_url='{self.underlying_blob_url}'"
             + f", in_progress_blob_sas_url='{self.in_progress_blob_sas_url}'"
             + f", form_recognizer_model_id: {self.form_recognizer_model_id}"
             + f", success_blob_path='{self.success_blob_path}'"
@@ -208,6 +217,7 @@ class InputBlob(BaseModel):
             + f", is_uploaded='{self.is_uploaded}'"
             + f", is_processed_for_validation='{self.is_processed_for_validation}'"
             + f", is_validation_successful='{self.is_validation_successful}'"
+            + f", is_underlying='{self.is_underlying}'"
             + f", is_processing_for_data='{self.is_processing_for_data}'"
             + f", is_processed_for_data='{self.is_processed_for_data}'"
             + f", is_processed_success='{self.is_processed_success}'"

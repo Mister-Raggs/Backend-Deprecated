@@ -1,9 +1,8 @@
 import configparser
 import os
-import pathlib
 import logging
 
-from common import utils, constants, custom_exceptions
+from common import custom_exceptions
 
 config_data = None
 

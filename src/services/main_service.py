@@ -1,12 +1,7 @@
 import logging
 
 from common import config_reader
-from common.custom_exceptions import (
-    FolderMissingBusinessException,
-    CitadelIDPBackendException,
-    ContainerMissingException,
-    BlobMissingException,
-)
+from common.custom_exceptions import CitadelIDPBackendException
 from services import input_blob_handler
 
 
@@ -30,12 +25,6 @@ def start_flow():
         if use_azure_blog_storage:
             try:
                 processed_files_list = input_blob_handler.handle_input_blob_process()
-            except ContainerMissingException as cme:
-                raise CitadelIDPBackendException(cme) from cme
-            except BlobMissingException as bme:
-                raise CitadelIDPBackendException(bme) from bme
-            except FolderMissingBusinessException as fmbe:
-                raise CitadelIDPBackendException(fmbe) from fmbe
             except Exception as ex:
                 raise CitadelIDPBackendException(ex) from ex
         else:

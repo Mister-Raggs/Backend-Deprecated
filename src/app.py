@@ -1,6 +1,7 @@
 import os
 from time import sleep
 import dotenv
+
 from common.utils import configure_database
 from common import logging_config, config_reader
 from jobs import job_scheduler_factory

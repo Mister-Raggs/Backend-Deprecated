@@ -3,6 +3,7 @@ import mongoengine as me
 from mongoengine.queryset.visitor import Q
 from flask_login import UserMixin
 from flask_login import LoginManager
+
 from models.base_model import BaseModel
 from models.company_model import CompanyModel
 from common import constants, utils

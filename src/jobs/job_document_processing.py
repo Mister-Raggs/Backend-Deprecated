@@ -9,8 +9,8 @@ JOB_NAME = "JOB-DOCUMENT-PROCESSING"
 
 # function name needs to be job_task for automated picking.
 def job_task():
-    start_time = datetime.strptime("08:00:00", "%H:%M:%S")
-    end_time = datetime.strptime("23:59:00", "%H:%M:%S")
+    start_time = datetime.strptime("00:00:01", "%H:%M:%S")
+    end_time = datetime.strptime("23:59:59", "%H:%M:%S")
     now = datetime.now().time()
 
     logging.info(
