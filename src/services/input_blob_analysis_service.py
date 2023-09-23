@@ -18,6 +18,21 @@ from common.custom_exceptions import (
 
 
 def analyze_blob(input_blob: InputBlob, blob_service_client: BlobServiceClient):
+    """
+    analyze_blob analyzes the blob using Azure Form Recognizer service and
+    stores the resulting analysis as JSON in Azure Blob Storage.
+
+    Args:
+        input_blob (InputBlob): An instance of the InputBlob class representing the blob to be analyzed.
+        blob_service_client (BlobServiceClient): An instance of the Azure BlobServiceClient for working
+            with Azure Blob Storage.
+
+    Raises:
+        MissingConfigException: If required configuration values are missing or empty.
+        CitadelIDPBackendException: If the input_blob.in_progress_blob_sas_url is empty.
+        Exception: Any unhandled exceptions during the process.
+    """
+
     if not config_reader.config_data.has_option("Main", "form-recognizer-key"):
         raise MissingConfigException("Main.form-recognizer-key is missing in config.")
 

@@ -80,14 +80,13 @@ def get_document_type_from_file_name(file_path: str):
 
 def get_blob_storage_connection_string() -> str:
     """
-    get_blob_storage_connection_string normalizes connection string
-
-    Raises:
-        MissingConfigException: Raised if azure-storage-account-connection-str is missing in config file
-        MissingConfigException: Raised if azure-storage-account-connection-str is empty in config file
+    get_blob_storage_connection_string retrieves the Azure Blob Storage connection string from the configuration.
 
     Returns:
-        str : normalized connection string
+        str: The Azure Blob Storage connection string.
+
+    Raises:
+        MissingConfigException: If the configuration is missing the required connection string or it's empty.
     """
 
     if not config_reader.config_data.has_option("Main", "azure-storage-account-connection-str"):
@@ -105,6 +104,13 @@ def get_blob_storage_connection_string() -> str:
 
 
 def configure_database():
+    """
+    configure_database initializes the MongoDB database connection using the connection string from the configuration.
+
+    Raises:
+        MissingConfigException: If the configuration is missing the required MongoDB connection string or it's empty.
+    """
+
     if not config_reader.config_data.has_option("Main", "mongodb_connection_string"):
         raise MissingConfigException("Main.mongodb_connection_string is missing in config.")
 
@@ -124,9 +130,10 @@ def configure_database():
 
 def get_azure_storage_blob_service_client():
     """
-    get_azure_storage_blob_service_client creates BlobServicesClient from blob storage connection string
+    get_azure_storage_blob_service_client retrieves the Azure Blob Service client using the connection string.
 
     Returns:
-        BobServiceClient
+        BlobServiceClient: The Azure Blob Service client.
     """
+
     return BlobServiceClient.from_connection_string(get_blob_storage_connection_string())

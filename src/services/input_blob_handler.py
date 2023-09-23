@@ -16,11 +16,13 @@ from common.custom_exceptions import (
 
 def handle_input_blob_process() -> list[InputBlob]:
     """
-    handle_input_blob_process processes the blobs that are present in Validation-Successful Folder in Azure Blob Storage
+    handle_input_blob_process handles the processing of input blobs.
 
     Returns:
-        list[InputBlob]: List of processed input_blobs
+        list[InputBlob]: A list of InputBlob objects that have been processed.
+
     """
+
     blob_service_client = utils.get_azure_storage_blob_service_client()
 
     # Fetching list of input_blobs from mongodb that are to be processed.
@@ -125,9 +127,16 @@ def handle_input_blob_process() -> list[InputBlob]:
     return input_blob_list
 
 
-def set_blob_for_processing_and_update_mongodb(
-    input_blob: InputBlob, blob_service_client: BlobServiceClient
-) -> InputBlob:
+def set_blob_for_processing_and_update_mongodb(input_blob: InputBlob, blob_service_client: BlobServiceClient):
+    """
+    set_blob_for_processing_and_update_mongodb sets the blob for processing and updates the MongoDB record.
+
+    Args:
+        input_blob (InputBlob): The InputBlob object to be processed.
+        blob_service_client (BlobServiceClient): The Azure Blob Service client.
+
+    """
+
     # Updating Lifecycle Status
     processing_lifecycle_status = LifecycleStatus(
         status=LifecycleStatusTypes.PROCESSING,
@@ -162,12 +171,20 @@ def set_blob_for_processing_and_update_mongodb(
 
     input_blob.save()
 
-    return input_blob
-
 
 def move_blob_from_source_folder_to_destination_folder_in_azure_blob_storage(
     blob_service_client: BlobServiceClient, source_blob_path: str, destination_blob_path: str
 ):
+    """
+    move_blob_from_source_folder_to_destination_folder_in_azure_blob_storage moves a blob from a source folder to a destination folder in Azure Blob Storage.
+
+    Args:
+        blob_service_client (BlobServiceClient): The Azure Blob Service client.
+        source_blob_path (str): The path of the source blob.
+        destination_blob_path (str): The path of the destination blob.
+
+    """
+
     source_blob_client = blob_service_client.get_blob_client(
         container=constants.DEFAULT_BLOB_CONTAINER, blob=source_blob_path
     )
@@ -181,6 +198,18 @@ def move_blob_from_source_folder_to_destination_folder_in_azure_blob_storage(
 
 
 def get_sas_url(blob_path: str, blob_service_client: BlobServiceClient) -> str:
+    """
+    get_sas_url generates a shared access signature (SAS) URL for a blob.
+
+    Args:
+        blob_path (str): The path of the blob.
+        blob_service_client (BlobServiceClient): The Azure Blob Service client.
+
+    Returns:
+        str: The SAS URL for the blob.
+
+    """
+
     account_name = blob_service_client.get_container_client(constants.DEFAULT_BLOB_CONTAINER).account_name
 
     sas_token = generate_blob_sas(
@@ -201,6 +230,16 @@ def get_sas_url(blob_path: str, blob_service_client: BlobServiceClient) -> str:
 def set_processing_status_and_move_completed_blobs(
     blob_service_client: BlobServiceClient, input_blob: InputBlob, is_error: bool
 ):
+    """
+    set_processing_status_and_move_completed_blobs sets the processing status and moves completed blobs to their respective folders in Azure Blob Storage.
+
+    Args:
+        blob_service_client (BlobServiceClient): The Azure Blob Service client.
+        input_blob (InputBlob): The InputBlob object being processed.
+        is_error (bool): Indicates whether an error occurred during processing.
+
+    """
+
     if is_error:
         input_blob.failed_blob_path = input_blob.in_progress_blob_path.replace(
             constants.INPROGRESS_SUBFOLDER, constants.FAILED_SUBFOLDER
