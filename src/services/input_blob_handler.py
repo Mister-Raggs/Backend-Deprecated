@@ -5,7 +5,7 @@ import logging
 from datetime import datetime, timedelta
 from azure.storage.blob import BlobServiceClient, generate_blob_sas, BlobSasPermissions
 
-from common import constants, utils, config_reader
+from common import constants, utils
 from services.input_blob_analysis_service import analyze_blob
 from models.input_blob_model import InputBlob, LifecycleStatus, LifecycleStatusTypes
 from common.custom_exceptions import (
@@ -29,28 +29,14 @@ def handle_input_blob_process() -> list[InputBlob]:
     input_blob_list: list[InputBlob] = InputBlob.objects(is_validation_successful=True, is_processing_for_data=False)
     logging.info("Number of input_blobs found in mongodb for processing: %s", len(input_blob_list))
 
-    if config_reader.config_data.has_option("Main", "use-azure-form-recognizer"):
-        use_azure_form_recognizer = config_reader.config_data.getboolean("Main", "use-azure-form-recognizer")
-    else:
-        use_azure_form_recognizer = True
-
-    is_error: bool = True
     for input_blob in input_blob_list:
         try:
             logging.info("Started processing for blob: '%s' ....", input_blob.validation_successful_blob_path)
             set_blob_for_processing_and_update_mongodb(input_blob, blob_service_client)
 
-            if use_azure_form_recognizer:
-                logging.info("Starting analysis for blob '%s' ....", input_blob.in_progress_blob_path)
-                analyze_blob(input_blob, blob_service_client)
-                logging.info("Analysis completed successfully for blob '%s' ....", input_blob.in_progress_blob_path)
-                is_error = False
-
-            else:
-                logging.info(
-                    "Cannot start analysis for blob '%s' since form-recognizer has been disabled",
-                    input_blob.in_progress_blob_path,
-                )
+            logging.info("Starting analysis for blob '%s' ....", input_blob.in_progress_blob_path)
+            analyze_blob(input_blob, blob_service_client)
+            logging.info("Analysis completed successfully for blob '%s' ....", input_blob.in_progress_blob_path)
 
             input_blob.is_processed_for_data = True
 
@@ -64,7 +50,7 @@ def handle_input_blob_process() -> list[InputBlob]:
 
             input_blob.save()
 
-            set_processing_status_and_move_completed_blobs(blob_service_client, input_blob, is_error)
+            set_processing_status_and_move_completed_blobs(blob_service_client, input_blob, False)
 
         except MissingConfigException:
             logging.exception(
@@ -84,7 +70,7 @@ def handle_input_blob_process() -> list[InputBlob]:
 
             input_blob.save()
 
-            set_processing_status_and_move_completed_blobs(blob_service_client, input_blob, is_error)
+            set_processing_status_and_move_completed_blobs(blob_service_client, input_blob, True)
 
         except CitadelIDPBackendException:
             logging.exception(
@@ -103,7 +89,7 @@ def handle_input_blob_process() -> list[InputBlob]:
 
             input_blob.save()
 
-            set_processing_status_and_move_completed_blobs(blob_service_client, input_blob, is_error)
+            set_processing_status_and_move_completed_blobs(blob_service_client, input_blob, True)
 
         except Exception:
             logging.exception(
@@ -122,7 +108,7 @@ def handle_input_blob_process() -> list[InputBlob]:
 
             input_blob.save()
 
-            set_processing_status_and_move_completed_blobs(blob_service_client, input_blob, is_error)
+            set_processing_status_and_move_completed_blobs(blob_service_client, input_blob, True)
 
     return input_blob_list
 
