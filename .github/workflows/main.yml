@@ -65,7 +65,7 @@ jobs:
         with:
           # list of Docker images to use as base name for tags
           images: |
-            raggs04/bktest
+            raggs04/citadel-idp-backend
           # TODO: need to add condition later about when to build the docker tag "latest". Dont want ot build it for every docker push
           flavor: |
             latest=true
