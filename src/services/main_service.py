@@ -17,18 +17,18 @@ def start_flow():
     processed_files_list = []
 
     if env.lower() == "local" or env.lower() == "prod":
-        if config_reader.config_data.has_option("Main", "use-azure-blog-storage"):
-            use_azure_blog_storage = config_reader.config_data.getboolean("Main", "use-azure-blog-storage")
+        if config_reader.config_data.has_option("Main", "use-azure-blob-storage"):
+            use_azure_blob_storage = config_reader.config_data.getboolean("Main", "use-azure-blob-storage")
         else:
-            use_azure_blog_storage = True
+            use_azure_blob_storage = True
 
-        if use_azure_blog_storage:
+        if use_azure_blob_storage:
             try:
                 processed_files_list = input_blob_handler.handle_input_blob_process()
             except Exception as ex:
                 raise CitadelIDPBackendException(ex) from ex
         else:
-            logging.exception("If env is local or prod use-azure-blog-storage needs to be true")
+            logging.exception("If env is local or prod use-azure-blob-storage needs to be true")
 
     # Just logging the details here for now.
     logging.info("Final processing status dump....")
