@@ -16,9 +16,11 @@ def main():
     # STEP 2: configure logging and reads env vars to infer env
     logger = logging_config.configure_logging(f"{app_base_dir}/logs/citadel-idp-backend.log")
     logger.info("App base directory inferred as '%s'", app_base_dir)
+
     app_env = os.environ.get("APP_ENV")
+
     if not app_env:
-        app_env = "local"
+        app_env = "prod"
         logger.warning("No APP_ENV env variable found. Defaulting to 'local'")
     else:
         logger.info("APP_ENV inferred from environment variable as %s", app_env)
