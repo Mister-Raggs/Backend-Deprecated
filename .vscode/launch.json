@@ -10,7 +10,7 @@
             "request": "launch",
             "program": "${workspaceFolder}/src/app.py",
             "env": {
-                "APP_ENV": "local",
+                "APP_ENV": "prod",
             },
             "console": "integratedTerminal",
             "justMyCode": false,
