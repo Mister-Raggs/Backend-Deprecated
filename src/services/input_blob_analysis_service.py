@@ -33,11 +33,24 @@ def analyze_blob(input_blob: InputBlob, blob_service_client: BlobServiceClient):
         Exception: Any unhandled exceptions during the process.
     """
 
-    if config_reader.config_data.has_option("Main", "use-azure-form-recognizer"):
-        use_azure_form_recognizer = config_reader.config_data.getboolean("Main", "use-azure-form-recognizer")
+    if config_reader.config_data.has_option("Main", "env"):
+        env = config_reader.config_data.get("Main", "env")
     else:
+        # If 'env' property is missing in config file it is set to local.
+        env = "local"
+
+    if env == "prod":
+        # If 'env' is 'prod', 'use_azure_form_recognizer' property is taken from config file.
+        if config_reader.config_data.has_option("Main", "use-azure-form-recognizer"):
+            use_azure_form_recognizer = config_reader.config_data.getboolean("Main", "use-azure-form-recognizer")
+        else:
+            # If 'use_azure_form_recognizer' property is missing in config file, it is set to False.
+            use_azure_form_recognizer = False
+    else:
+        # If 'env' is not 'prod', 'use_azure_form_recognizer' is set to 'False'.
         use_azure_form_recognizer = False
 
+    logging.info("use_azure_form_recognizer is set as '%s'", use_azure_form_recognizer)
     if use_azure_form_recognizer:
         if not config_reader.config_data.has_option("Main", "form-recognizer-key"):
             raise MissingConfigException("Main.form-recognizer-key is missing in config.")
@@ -61,8 +74,10 @@ def analyze_blob(input_blob: InputBlob, blob_service_client: BlobServiceClient):
 
         if utils.string_is_not_empty(input_blob.in_progress_blob_sas_url):
             poller = document_analysis_client.begin_analyze_document_from_url(
-                input_blob.form_recognizer_model_id, input_blob.in_progress_blob_sas_url
+                input_blob.form_recognizer_model_id,
+                input_blob.in_progress_blob_sas_url,
             )
+
         else:
             raise CitadelIDPBackendException("input_blob.in_progress_blob_sas_url should be non empty.")
 

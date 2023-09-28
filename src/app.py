@@ -20,7 +20,7 @@ def main():
     app_env = os.environ.get("APP_ENV")
 
     if not app_env:
-        app_env = "prod"
+        app_env = "local"
         logger.warning("No APP_ENV env variable found. Defaulting to 'local'")
     else:
         logger.info("APP_ENV inferred from environment variable as %s", app_env)

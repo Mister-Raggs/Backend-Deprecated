@@ -5,7 +5,21 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "Citadel IDP Backend - app.py",
+            "name": "Local - Citadel IDP Backend - app.py",
+            "type": "python",
+            "request": "launch",
+            "program": "${workspaceFolder}/src/app.py",
+            "env": {
+                "APP_ENV": "local",
+            },
+            "console": "integratedTerminal",
+            "justMyCode": false,
+            "purpose": [
+                "debug-in-terminal"
+            ]
+        },
+        {
+            "name": "Prod - Citadel IDP Backend - app.py",
             "type": "python",
             "request": "launch",
             "program": "${workspaceFolder}/src/app.py",
