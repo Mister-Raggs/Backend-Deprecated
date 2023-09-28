@@ -8,6 +8,7 @@ from azure.core.credentials import AzureKeyCredential
 from azure.core.serialization import AzureJSONEncoder
 from azure.ai.formrecognizer import DocumentAnalysisClient
 from azure.storage.blob import BlobServiceClient, ContentSettings
+from pathlib import Path
 
 from models.input_blob_model import InputBlob, ResultJsonMetaData
 from common import config_reader, utils, constants
@@ -88,7 +89,14 @@ def analyze_blob(input_blob: InputBlob, blob_service_client: BlobServiceClient):
         result_dict = [result.to_dict()]
 
     else:
-        result_dict = "No result is generated because Form Recognizer is Disabled"
+        app_base_dir = config_reader.config_data.get("Main", "app_base_dir")
+        local_json_file_path = Path(app_base_dir + "/dummy_json_file_storage/1185-receipt.json").absolute()
+        with open(local_json_file_path,"r") as jsonfile:
+            jsondata=json.load(jsonfile)
+        jsondata["recognizer_result_data"][0]["model_id"]=f"prebuilt-{input_blob.metadata.form_recognizer_model_type}"
+        with open(local_json_file_path,'w') as jsonfile:
+            json.dump(jsondata,jsonfile)
+        result_dict = [jsondata]
 
     # Creating a dictionary with the blob name and blob output data
     final_result = {
@@ -97,7 +105,7 @@ def analyze_blob(input_blob: InputBlob, blob_service_client: BlobServiceClient):
     }
 
     # Serializing the final result to JSON
-    result_json = json.dumps(final_result, cls=AzureJSONEncoder)
+    result_json = json.dumps(final_result, cls=AzureJSONEncoder,indent=2)
 
     # Defining the path where the JSON output will be stored in Azure Blob Storage
     path = input_blob.in_progress_blob_path.replace("/Inprogress/", "/")
